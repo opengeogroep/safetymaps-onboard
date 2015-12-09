@@ -58,13 +58,13 @@ included in this project.
 
 Command line config:
 - `-port <port>` Port to start server on, default `1080`
-- `-workdir <dir>` Directory for logs, unpacked index, stored requests
+- `-workdir <dir>` Directory for logs, unpacked index, stored requests, default `var`
 
 ### Location search
 
 Path: `/q/<term>`  
 Command line config:
-- `-searchdb <dir>` Directory containing the compressed Lucene index, default `db`
+- `-searchdb <file>` ZIP file containing the Lucene index, default `db/index.zip`
 
 Configuring safetymaps fullscreen:
 ```
