@@ -23,17 +23,31 @@ directory. When this is completely downloaded, the flag file should be updated.
 The script `safetymaps-onboard.cmd` copies the `update` directory to `bin` and
 and starts it. The old version is moved to the `bak` directory.
 
-## Installation
+## Making a release
 
 Copy `bag_settings.sh.example` to `bag_settings.sh` and adjust settings to your
 environment. The settings should allow psql to connect to the same bag database
-as the NodeJS safetymapsDBK application.
+as the NodeJS safetymapsDBK application. Alternatively, a few example rows are
+provided in `bag.txt.example`. Copy this to `bag.txt` and comment out the `psql` call
+in release.sh to use it.
 
 Run `release.sh` to create a distribution in the `bin` directory including the
 Lucene search index.
 
-Configure filesetsync as follows:
+## Installation on server and embedded client
+
+Configure filesetsync on the server as follows:
 _TODO_
+
+To install on a Windows embedded client, copy the contents of the bin directory 
+to `c:\ogg\safetymaps-onboard\bin` system and create a shortcut to
+ `safetymaps-onboard.cmd` in the Startup Start Menu folder, and set it to start
+minimized. Start the application and allow network access before deploying to 
+fire engines.
+
+Test the location search by browsing to http://localhost:1080/q/zonnebaan on the
+embedded system, and test all functionality described below in the fullscreen 
+safetymaps viewer.
 
 ## Functionality
 
@@ -67,28 +81,8 @@ an entire PostGIS installation up-to-date with a BAG database is unworkable
 in an embedded situation.
 
 Uses Lucene for searching. Lucene index is created on the server using the
-IndexBuilder class, which takes as input the result of the following query:
-
-```
-psql bag -c "select openbareruimtenaam || ' ' \
-  || COALESCE(CAST(huisnummer as varchar) || ' ','') \
-  || COALESCE(CAST(huisletter as varchar) || ' ','') \
-  || COALESCE(CAST(huisnummertoevoeging as varchar) || ' ','') \
-  || COALESCE(CAST(postcode as varchar) || ' ','') || \
-  CASE WHEN lower(woonplaatsnaam) = lower(gemeentenaam) \
-    THEN woonplaatsnaam \
-    ELSE woonplaatsnaam || ', ' || gemeentenaam \
-  END as display_name, \
-  st_x(st_transform(geopunt,4326)) as x, st_y(st_transform(geopunt,4326)) as y \
-  from bag_actueel.adres \
-  where st_contains(st_transform(st_setsrid(st_geomfromtext('MULTIPOLYGON((( \ 
-    4.09204132444052 51.9143105516418,\
-    4.08411660696852 52.1873742191799,\
-    4.59149658653479 52.1918851784121,\
-    4.59633617480214 51.9187859633451,\
-    4.09204132444052 51.9143105516418)))'),4326),28992),geopunt)" -Aztq > bag.txt
-```
-(Replace the MULTIPOLYGON coordinates with organisation area)
+IndexBuilder class, which takes as input the result of the psql query in 
+`release.sh`.
 
 This input is parsed and put in a Lucene index and compressed as ZIP with 10MB
 split parts to be transferred with filesetsync-client.
