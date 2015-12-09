@@ -22,7 +22,19 @@ directory. When this is completely downloaded, the flag file should be updated.
 
 The script `safetymaps-onboard.cmd` copies the `update` directory to `bin` and
 and starts it. The old version is moved to the `bak` directory.
- 
+
+## Installation
+
+Copy `bag_settings.sh.example` to `bag_settings.sh` and adjust settings to your
+environment. The settings should allow psql to connect to the same bag database
+as the NodeJS safetymapsDBK application.
+
+Run `release.sh` to create a distribution in the `bin` directory including the
+Lucene search index.
+
+Configure filesetsync as follows:
+_TODO_
+
 ## Functionality
 
 The fullscreen safetymapsDBK viewer is designed to work as a static web 
