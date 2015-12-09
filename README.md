@@ -26,7 +26,7 @@ and starts it. The old version is moved to the `bak` directory.
 ## Making a release
 
 Copy `bag_settings.sh.example` to `bag_settings.sh` and adjust settings to your
-environment. The settings should allow psql to connect to the same bag database
+environment. The settings should allow psql to connect to the same BAG database
 as the NodeJS safetymapsDBK application. Alternatively, a few example rows are
 provided in `bag.txt.example`. Copy this to `bag.txt` and comment out the `psql` call
 in release.sh to use it.
@@ -52,19 +52,20 @@ safetymaps viewer.
 ## Functionality
 
 The fullscreen safetymapsDBK viewer is designed to work as a static web 
-application as much as possible but that is not always feasable, therefore the
-following web API functionality is included in this project.
+application as much as possible but searching a large adress index is not
+workable in JavaScript, therefore the following web API functionality is 
+included in this project.
 
-Command line config:
- `-port \<port\>`: Port to start server on, default 1080
+Command line config:  
+ - `-port <port>`: Port to start server on, default 1080
 
 ### Location search
 
-Path: /q/\<term\>
-Command line config: 
-  `-search-db \<dir\>`: Directory containing the compressed Lucene index
-  `-search-var \`<dir\>': Directory to store uncompressed index, default 'var'
-Configuring safetymaps fullscreen:
+Path: `/q/<term>`  
+Command line config:  
+  `-search-db \<dir\>`: Directory containing the compressed Lucene index  
+  `-search-var \`<dir\>': Directory to store uncompressed index, default 'var'  
+Configuring safetymaps fullscreen:  
 ```
 if(!dbkjs.options.urls) {
   dbkjs.options.urls = {};
@@ -96,12 +97,12 @@ available (when fire engine is returned to base WiFi):
 
 - support module emails
 
-Path: `/forward/\<forward-path\>` (GET and POST supported)
-Command line config: 
-  `-forward-url \<url\>`: The URL to safetymaps server to forward the request to
-  `-store-dir \<dir\>`: The directory to store requests to be forwarded
-  `-save-forwarded`: Keep forwarded requests in "forwarded" subdirectory in store-dir 
-Configuring safetymaps fullscreen, support module:
+Path: `/forward/<forward-path>` (GET and POST supported)  
+Command line config:  
+  `-forward-url \<url\>`: The URL to safetymaps server to forward the request to  
+  `-store-dir \<dir\>`: The directory to store requests to be forwarded  
+  `-save-forwarded`: Keep forwarded requests in "forwarded" subdirectory in store-dir   
+Configuring safetymaps fullscreen, support module:  
 ```
 if(!dbkjs.options.urls) {
   dbkjs.options.urls = {};
@@ -128,4 +129,7 @@ Only some headers are forwarded:
  
 Additional headers added:
  - `X-Original-Date`: Original Date header
+ 
+A pure webbrowser-based solution using local storage was decided against 
+because the disk store and log is more robust and manageable.
 
