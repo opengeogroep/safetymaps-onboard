@@ -21,13 +21,19 @@ import org.apache.log4j.Logger;
  * @author Matthijs Laan
  */
 public class Main {
-    public static String var;
+    public static final String var = "var";
+    private static Logger log;
+
+    static {
+        // Set property used in log4j.properties
+        System.setProperty("arg.var", var);
+        log = Logger.getLogger(Main.class);
+    }
 
     private static Options buildOptions() {
         Options options = new Options();
         options.addOption("h", "help", false, "Toon deze help");
         options.addOption("p", "port", true, "Poort om webservice op te starten (standaard 1080)");
-        options.addOption("w", "workdir", true, "Werkdirectory (standaard var)");
 
         LocationSearch.addOptions(options);
         RequestStoreAndForward.addOptions(options);
@@ -59,12 +65,6 @@ public class Main {
             System.exit(0);
         }
 
-        var = cl.getOptionValue("var", "var");
-
-        // Set property used in log4j.properties
-        System.setProperty("arg.var", var);
-        Logger log = Logger.getLogger(Main.class);
-
         log.info(String.format("%s %s starting (git commit %s, built at %s)",
                 Version.getProperty("project.name"),
                 Version.getProjectVersion(),
@@ -84,12 +84,13 @@ public class Main {
         WatchService watcher = FileSystems.getDefault().newWatchService();
         Paths.get(".").register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 
-        System.out.println("Watching for update");
+        log.info("Watching for update");
         while(true) {
             WatchKey key = watcher.take();
             for(WatchEvent event: key.pollEvents()) {
                 Path p = (Path)event.context();
                 if("update.flag".equals(p.toString())) {
+                    server.shutdown();
                     System.exit(99);
                 }
             }

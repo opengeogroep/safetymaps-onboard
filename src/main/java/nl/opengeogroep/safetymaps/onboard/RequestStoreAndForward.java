@@ -6,12 +6,15 @@ import java.io.IOException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author Matthijs Laan
  */
 public class RequestStoreAndForward extends Thread {
+    private static final Logger log = Logger.getLogger(RequestStoreAndForward.class);
+
     private String dir;
     private String forwardURL;
 
@@ -25,7 +28,7 @@ public class RequestStoreAndForward extends Thread {
             try {
                 this.forwardURL = FileUtils.readFileToString(new File("forward.txt"), "US-ASCII");
             } catch(IOException e) {
-                System.out.println("Geen forwardurl command line optie en geen forward.txt, forwarden disabled!");
+                log.error("store and forward: Geen forwardurl command line optie en geen forward.txt, forwarden disabled!");
             }
         }
     }
@@ -44,7 +47,7 @@ public class RequestStoreAndForward extends Thread {
             return new NanoHTTPD.Response(NanoHTTPD.Response.Status.INTERNAL_ERROR, "text/plain", "No forwarding URL configured");
         }
 
-        System.out.println("Received delayed request!");
+        log.info("store and forward: received request!");
 
         // TODO store
 
@@ -57,7 +60,7 @@ public class RequestStoreAndForward extends Thread {
             return;
         }
 
-        System.out.println("Starting forwarding thread");
+        log.info("store and forward: starting forwarding thread");
 
         while(!stop) {
             forwardRequests();
@@ -69,10 +72,12 @@ public class RequestStoreAndForward extends Thread {
     }
 
     public void shutdown() {
+        log.info("store and forward: requesting shutdown");
         this.stop = true;
         interrupt();
         try {
             join();
+            log.info("store and forward: thread ended");
         } catch (InterruptedException ex) {
         }
     }

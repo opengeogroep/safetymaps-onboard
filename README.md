@@ -58,7 +58,6 @@ included in this project.
 
 Command line config:
 - `-port <port>` Port to start server on, default `1080`
-- `-workdir <dir>` Directory for logs, unpacked index, stored requests, default `var`
 
 ### Location search
 
@@ -101,7 +100,7 @@ available (when fire engine is returned to base WiFi):
 Path: `/forward/<forward-path>` (GET and POST supported)  
 Command line config:
 - `-forwardurl <url>` The URL to safetymaps server to forward the request to
-- `-save` Keep forwarded requests in `forwarded` subdirectory `store/forwarded` in workdir
+- `-save` Keep forwarded requests in `forwarded` subdirectory `var/store/forwarded`
 
 Configuring safetymaps fullscreen, support module:
 ```

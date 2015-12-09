@@ -4,12 +4,14 @@ import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
 import java.io.IOException;
 import org.apache.commons.cli.CommandLine;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author Matthijs Laan
  */
 public class HttpServer extends NanoHTTPD {
+    private static final Logger log = Logger.getLogger(HttpServer.class);
 
     private final RequestStoreAndForward forwarder;
     private final LocationSearch search;
@@ -23,7 +25,7 @@ public class HttpServer extends NanoHTTPD {
         search = new LocationSearch(var, cl);
 
         start();
-        System.out.println("HTTP server started at port " + port);
+        log.info("HTTP server started at port " + port);
     }
 
     public void shutdown() {

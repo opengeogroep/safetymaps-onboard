@@ -45,9 +45,11 @@ public class LocationSearch {
         try {
             cleanIndexDir(indexDir);
             unpackIndex(new File(var), db);
+            log.info("locationsearch: opening Lucene index");
             reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexDir.toURI())));
             searcher = new IndexSearcher(reader);
         } catch(Exception e) {
+            log.error("locationsearch: error opening Lucene index, search disabled!", e);
             this.initException = e;
         }
     }
@@ -57,13 +59,13 @@ public class LocationSearch {
             f.mkdirs();
         }
         for(String s: f.list()) {
-            System.out.println("Cleaning: " + s);
+            log.trace("locationsearch: removing " + s);
             FileUtils.deleteQuietly(new File(f + File.separator + s));
         }
     }
 
     private static void unpackIndex(File f, String zip) throws Exception {
-        System.out.println("Extracting index");
+        log.info("locationsearch: extracting index");
         new ZipFile(zip).extractAll(f.getAbsolutePath());
     }
 
@@ -94,7 +96,7 @@ public class LocationSearch {
         if(p == null || p.trim().length() == 0) {
             return new Response(Response.Status.OK, "application/json; charset=utf-8", "[]");
         }
-        log.debug("Search: " + p);
+        log.trace("locationsearch: " + p);
 
         try {
             String[] words = p.split("\\s+");
@@ -109,7 +111,7 @@ public class LocationSearch {
             Analyzer analyzer = new StandardAnalyzer();
             QueryParser parser = new QueryParser("display_name", analyzer);
             Query query = parser.parse(q.toString());
-            log.debug("Lucene query: " + query.toString("display_name"));
+            log.trace("locationsearch: Lucene query: " + query.toString("display_name"));
             TopDocs docs = searcher.search(query, 10);
             //System.out.println("Hits: " + docs.scoreDocs.length);
             JSONArray results = new JSONArray();
@@ -131,12 +133,13 @@ public class LocationSearch {
                 //String s = doc.get("display_name") + "; " + doc.getField("lon").numericValue() + "," + doc.getField("lat").numericValue() + ", score="+ docs.scoreDocs[i].score;
                 //System.out.println(s);
             }
-            log.info("Search: " + p + ", hits: " + docs.scoreDocs.length);
+            log.info("locationsearch: " + p + ", hits: " + docs.scoreDocs.length);
 
             Response r =  new Response(Response.Status.OK, "application/json; charset=utf-8", results.toString(4));
             r.addHeader("Access-Control-Allow-Origin", "*");
             return r;
         } catch(Exception e) {
+            log.error("locationsearch: error searching for " + p, e);
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
             return new Response(Response.Status.INTERNAL_ERROR, "text/plain", "Fout bij zoeken: " + sw.toString());
