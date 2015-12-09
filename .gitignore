@@ -1,5 +1,9 @@
+git.properties
 bag.txt
+organisation_area.wkt
+bag_settings.sh
+bin
 target
 var
 db
-
+index

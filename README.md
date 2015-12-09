@@ -27,7 +27,10 @@ and starts it. The old version is moved to the `bak` directory.
 
 The fullscreen safetymapsDBK viewer is designed to work as a static web 
 application as much as possible but that is not always feasable, therefore the
-following functionality is included in this project:
+following web API functionality is included in this project.
+
+Command line config:
+ `-port \<port\>`: Port to start server on, default 1080
 
 ### Location search
 

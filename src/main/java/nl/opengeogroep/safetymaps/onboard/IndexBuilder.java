@@ -64,8 +64,8 @@ public class IndexBuilder {
             writer.addDocument(doc);
             i++;
 
-            if(i % 10000 == 0) {
-                System.out.println("Indexed " + i + " rows, current doc: " + doc);
+            if(i % 50000 == 0) {
+                System.out.println("Indexed " + i + " rows");
             }
         }
         writer.close();
