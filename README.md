@@ -57,14 +57,14 @@ workable in JavaScript, therefore the following web API functionality is
 included in this project.
 
 Command line config:
-- `-port <port>`: Port to start server on, default 1080
+- `-port <port>` Port to start server on, default `1080`
 
 ### Location search
 
 Path: `/q/<term>`  
 Command line config:
-- `-search-db \<dir\>`: Directory containing the compressed Lucene index
--  `-search-var \`<dir\>': Directory to store uncompressed index, default 'var'
+- `-search-db <dir>` Directory containing the compressed Lucene index, default `db`
+- `-search-var <dir>` Directory to store uncompressed index, default `var`  
 Configuring safetymaps fullscreen:
 ```
 if(!dbkjs.options.urls) {
@@ -74,7 +74,7 @@ if(!dbkjs.options.urls) {
 // because the static webserver is running on port 80
 dbkjs.options.urls.autocomplete = 'http://' + window.location.hostname + (window.location.hostname === 'localhost' ? ':1080' : '') + '/q/';
 ```
-Implementing class: LuceneSearcher
+Implementing class: [LuceneSearcher](src/main/java/nl/opengeogroep/safetymaps/onboard/LuceneSearcher.java)
 
 Search for adresses/locations. Same API as controllers/bag.js, but the 
 implementation is completely different because installing and keeping 
@@ -99,9 +99,9 @@ available (when fire engine is returned to base WiFi):
 
 Path: `/forward/<forward-path>` (GET and POST supported)  
 Command line config:
-- `-forward-url \<url\>`: The URL to safetymaps server to forward the request to
-- `-store-dir \<dir\>`: The directory to store requests to be forwarded
-- `-save-forwarded`: Keep forwarded requests in "forwarded" subdirectory in store-dir
+- `-forward-url <url>` The URL to safetymaps server to forward the request to
+- `-store-dir <dir>` The directory to store requests to be forwarded, default `var/store`
+- `-save-forwarded` Keep forwarded requests in `forwarded` subdirectory in store-dir  
 Configuring safetymaps fullscreen, support module:
 ```
 if(!dbkjs.options.urls) {
@@ -117,7 +117,7 @@ $(dbkjs).one("dbkjs_init_complete", function() {
     });
 });
 ```
-Implementing class: RequestStoreAndForward
+Implementing class: [RequestStoreAndForward](src/main/java/nl/opengeogroep/safetymaps/onboard/RequestStoreAndForward.java)
 
 Feedback is currently available in logging output and examining the store 
 directory, users off safetymaps fullscreen do not currently get feedback of 
