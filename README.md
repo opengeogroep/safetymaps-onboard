@@ -39,13 +39,13 @@ Lucene search index.
 Configure filesetsync on the server as follows:
 _TODO_
 
-To install on a Windows embedded client, copy the contents of the bin directory 
-to `c:\ogg\safetymaps-onboard\bin` system and create a shortcut to
+To install on a Windows embedded client, copy the contents of the `bin` directory
+to `c:\ogg\safetymaps-onboard\bin` and create a shortcut to
  `safetymaps-onboard.cmd` in the Startup Start Menu folder, and set it to start
-minimized. Start the application and allow network access before deploying to 
-fire engines.
+minimized. Start the application and allow network access before deploying the
+system image to fire engines.
 
-Test the location search by browsing to http://localhost:1080/q/zonnebaan on the
+Test the location search by browsing to [http://localhost:1080/q/zonnebaan] on the
 embedded system, and test all functionality described below in the fullscreen 
 safetymaps viewer.
 
@@ -53,7 +53,7 @@ safetymaps viewer.
 
 The fullscreen safetymapsDBK viewer is designed to work as a static web 
 application as much as possible but searching a large adress index is not
-workable in JavaScript, therefore the following web API functionality is 
+doable in JavaScript, therefore the following web API functionality is
 included in this project.
 
 Command line config:
@@ -64,12 +64,11 @@ Command line config:
 Path: `/q/<term>`  
 Command line config:
 - `-search-db <dir>` Directory containing the compressed Lucene index, default `db`
-- `-search-var <dir>` Directory to store uncompressed index, default `var`  
+- `-search-var <dir>` Directory to store uncompressed index, default `var`
+
 Configuring safetymaps fullscreen:
 ```
-if(!dbkjs.options.urls) {
-  dbkjs.options.urls = {};
-}
+dbkjs.options.urls = dbkjs.options.urls ? dbkjs.options.urls : {};
 // If running fullscreen safetymaps on server, use default port. Otherwise use port 1080
 // because the static webserver is running on port 80
 dbkjs.options.urls.autocomplete = 'http://' + window.location.hostname + (window.location.hostname === 'localhost' ? ':1080' : '') + '/q/';
@@ -101,12 +100,11 @@ Path: `/forward/<forward-path>` (GET and POST supported)
 Command line config:
 - `-forward-url <url>` The URL to safetymaps server to forward the request to
 - `-store-dir <dir>` The directory to store requests to be forwarded, default `var/store`
-- `-save-forwarded` Keep forwarded requests in `forwarded` subdirectory in store-dir  
+- `-save-forwarded` Keep forwarded requests in `forwarded` subdirectory in store-dir
+
 Configuring safetymaps fullscreen, support module:
 ```
-if(!dbkjs.options.urls) {
-  dbkjs.options.urls = {};
-}
+dbkjs.options.urls = dbkjs.options.urls ? dbkjs.options.urls : {};
 // If running fullscreen safetymaps on server, use default port. Otherwise use port 1080
 // because the static webserver is running on port 80
 dbkjs.options.urls.annotation = 'http://' + window.location.hostname +  (window.location.hostname === 'localhost' ? ':1080' : '') + '/forward/mail';
@@ -128,7 +126,7 @@ Only some headers are forwarded:
  - `Content-Length`
  
 Additional headers added:
- - `X-Original-Date`: Original Date header
+ - `X-Original-Date` Original Date header
  
 A pure webbrowser-based solution using local storage was decided against 
 because the disk store and log is more robust and manageable.
