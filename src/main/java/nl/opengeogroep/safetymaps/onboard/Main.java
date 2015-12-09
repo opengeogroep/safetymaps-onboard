@@ -10,37 +10,76 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import net.lingala.zip4j.core.ZipFile;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.cli.*;
+import org.apache.log4j.Logger;
 
 /**
  * Onboard-application for embedded servers connected to a tablet/phone or for
- * on (Windows)tablets themselves to provide services to the fullscreen
- * safetymapsDBK viewer.
- * 
+ * on (Java-capable) tablets themselves to provide services to the fullscreen
+ * safetymapsDBK viewer. See README.md for details.
+ *
  * @author Matthijs Laan
  */
 public class Main {
+    public static String var;
+
+    private static Options buildOptions() {
+        Options options = new Options();
+        options.addOption("h", "help", false, "Toon deze help");
+        options.addOption("p", "port", true, "Poort om webservice op te starten (standaard 1080)");
+        options.addOption("w", "workdir", true, "Werkdirectory (standaard var)");
+
+        LocationSearch.addOptions(options);
+        RequestStoreAndForward.addOptions(options);
+        return options;
+    }
+
+    private static void printHelp(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("safetymaps-onboard", options );
+    }
 
     public static void main(String[] args) throws Exception {
 
-        if(args.length == 0) {
-            System.out.println("Argument missing: index zipfile");
+        Options options = buildOptions();
+        CommandLine cl = null;
+        try {
+            CommandLineParser parser = new DefaultParser();
+
+            cl = parser.parse(options, args);
+        } catch(ParseException e) {
+            System.out.printf("%s\n\n", e.getMessage());
+
+            printHelp(options);
             System.exit(1);
         }
 
-        System.out.println("locationsearch starting");
-        File f = new File("var");
+        if(cl.hasOption("h")) {
+            printHelp(options);
+            System.exit(0);
+        }
+
+        var = cl.getOptionValue("var", "var");
+
+        // Set property used in log4j.properties
+        System.setProperty("arg.var", var);
+        Logger log = Logger.getLogger(Main.class);
+
+        log.info(String.format("%s %s starting (git commit %s, built at %s)",
+                Version.getProperty("project.name"),
+                Version.getProjectVersion(),
+                Version.getProperty("git.commit.id"),
+                Version.getProperty("git.build.time")
+        ));
+        File f = new File(var);
 
         if(!f.exists()) {
             f.mkdir();
         } else if(!f.isDirectory()) {
             throw new Exception("Cannot create dir: " + f);
         }
-        cleanVarDir(f);
-        unpackIndex(f, args[0]);
 
-        HttpSearchServer server = new HttpSearchServer(1080, f + File.separator + "index");
+        HttpServer server = new HttpServer(var, Integer.parseInt(cl.getOptionValue("port", "1080")), cl);
 
         WatchService watcher = FileSystems.getDefault().newWatchService();
         Paths.get(".").register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
@@ -50,7 +89,7 @@ public class Main {
             WatchKey key = watcher.take();
             for(WatchEvent event: key.pollEvents()) {
                 Path p = (Path)event.context();
-                if("locationupdate.flag".equals(p.toString())) {
+                if("update.flag".equals(p.toString())) {
                     System.exit(99);
                 }
             }
@@ -58,15 +97,4 @@ public class Main {
         }
     }
 
-    private static void cleanVarDir(File f) {
-        for(String s: f.list()) {
-            System.out.println("Cleaning: " + s);
-            FileUtils.deleteQuietly(new File(f + File.separator + s));
-        }
-    }
-
-    private static void unpackIndex(File f, String zip) throws Exception {
-        System.out.println("Extracting index");
-        new ZipFile(zip).extractAll(f.getAbsolutePath());
-    }
 }

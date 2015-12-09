@@ -1,13 +1,17 @@
 package nl.opengeogroep.safetymaps.onboard;
 
-import fi.iki.elonen.NanoHTTPD;
-import fi.iki.elonen.NanoHTTPD.Response.Status;
-import java.io.BufferedReader;
+import fi.iki.elonen.NanoHTTPD.IHTTPSession;
+import fi.iki.elonen.NanoHTTPD.Response;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Paths;
+import net.lingala.zip4j.core.ZipFile;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -26,46 +30,71 @@ import org.json.JSONObject;
  *
  * @author Matthijs Laan
  */
-public class HttpSearchServer extends NanoHTTPD {
+public class LocationSearch {
+    private static final Logger log = Logger.getLogger(LocationSearch.class);
 
     private Exception initException;
 
     private IndexReader reader;
     private IndexSearcher searcher;
 
-    private DelayedRequestForwarder forwarder;
-
-    public HttpSearchServer(int port, String index) throws IOException {
-        super(port);
+    public LocationSearch(String var, CommandLine cl) {
+        File indexDir = new File(var + File.separator + "index");
+        String db = cl.getOptionValue("searchdb", "db/index.zip");
 
         try {
-            reader = DirectoryReader.open(FSDirectory.open(Paths.get(index))); // new File("index")));
+            cleanIndexDir(indexDir);
+            unpackIndex(new File(var), db);
+            reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexDir.toURI())));
             searcher = new IndexSearcher(reader);
         } catch(Exception e) {
             this.initException = e;
         }
-
-        start();
-        System.out.println("HTTP server started at port " + port);
     }
 
-    @Override
+    private static void cleanIndexDir(File f) {
+        if(!f.exists()) {
+            f.mkdirs();
+        }
+        for(String s: f.list()) {
+            System.out.println("Cleaning: " + s);
+            FileUtils.deleteQuietly(new File(f + File.separator + s));
+        }
+    }
+
+    private static void unpackIndex(File f, String zip) throws Exception {
+        System.out.println("Extracting index");
+        new ZipFile(zip).extractAll(f.getAbsolutePath());
+    }
+
+    public static void addOptions(Options options) {
+        options.addOption("searchdb", true, "Zoekdatabase ZIP bestand (default db/index.zip)");
+    }
+
+    public void shutdown() {
+        try {
+            reader.close();
+        } catch (IOException ex) {
+        }
+    }
+
     public Response serve(IHTTPSession session) {
+        if(!session.getUri().startsWith("/q/")) {
+            return null;
+        }
+
         if(initException != null) {
             StringWriter sw = new StringWriter();
             initException.printStackTrace(new PrintWriter(sw));
-            return new Response("Fout in locatiezoeker: " + sw.toString());
-        }
-
-        if(!session.getUri().startsWith("/q/")) {
-            return new Response(Status.NOT_FOUND, "text/plain", "Not Found: " + session.getUri());
+            return new Response(Response.Status.INTERNAL_ERROR, "text/plain", "Fout in locatiezoeker: " + sw.toString());
         }
 
         String p = session.getUri().substring(3);
 
         if(p == null || p.trim().length() == 0) {
-            return new Response(Status.OK, "application/json; charset=utf-8", "[]");
+            return new Response(Response.Status.OK, "application/json; charset=utf-8", "[]");
         }
+        log.debug("Search: " + p);
 
         try {
             String[] words = p.split("\\s+");
@@ -80,8 +109,7 @@ public class HttpSearchServer extends NanoHTTPD {
             Analyzer analyzer = new StandardAnalyzer();
             QueryParser parser = new QueryParser("display_name", analyzer);
             Query query = parser.parse(q.toString());
-            System.out.println("Searching for: " + query.toString("display_name"));
-
+            log.debug("Lucene query: " + query.toString("display_name"));
             TopDocs docs = searcher.search(query, 10);
             //System.out.println("Hits: " + docs.scoreDocs.length);
             JSONArray results = new JSONArray();
@@ -103,24 +131,15 @@ public class HttpSearchServer extends NanoHTTPD {
                 //String s = doc.get("display_name") + "; " + doc.getField("lon").numericValue() + "," + doc.getField("lat").numericValue() + ", score="+ docs.scoreDocs[i].score;
                 //System.out.println(s);
             }
-            Response r =  new Response(Status.OK, "application/json; charset=utf-8", results.toString(4));
+            log.info("Search: " + p + ", hits: " + docs.scoreDocs.length);
+
+            Response r =  new Response(Response.Status.OK, "application/json; charset=utf-8", results.toString(4));
             r.addHeader("Access-Control-Allow-Origin", "*");
             return r;
         } catch(Exception e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
-            return new Response(Status.INTERNAL_ERROR, "text/plain", "Fout bij zoeken: " + sw.toString());
-        }
-    }
-
-    public static void main(String[] args) throws IOException {
-        new HttpSearchServer(1080, "index");
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        while(true) {
-            String line = in.readLine();
-            if(line == null || line.length() == 0) {
-                break;
-            }
+            return new Response(Response.Status.INTERNAL_ERROR, "text/plain", "Fout bij zoeken: " + sw.toString());
         }
     }
 }
