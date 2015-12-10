@@ -2,13 +2,25 @@ package nl.opengeogroep.safetymaps.onboard;
 
 import fi.iki.elonen.NanoHTTPD;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import static org.apache.http.HttpStatus.SC_OK;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.log4j.Logger;
 
 /**
@@ -42,19 +54,20 @@ public class RequestStoreAndForward extends Thread {
         options.addOption("save", true, "Bewaar geforwarde requests in forwarded subdirectory");
     }
 
+
     public NanoHTTPD.Response serve(NanoHTTPD.IHTTPSession session) {
         if(!session.getUri().startsWith("/forward/")) {
             return null;
         }
 
         if(this.forwardURL == null) {
-            return new NanoHTTPD.Response(NanoHTTPD.Response.Status.INTERNAL_ERROR, "text/plain", "No forwarding URL configured");
+            return HttpUtil.addCors(new NanoHTTPD.Response(NanoHTTPD.Response.Status.INTERNAL_ERROR, "text/plain", "No forwarding URL configured"));
         }
 
         log.info("store and forward: received request for " + session.getMethod() + " " + session.getUri());
 
         if(!(session.getMethod() == NanoHTTPD.Method.GET || session.getMethod() == NanoHTTPD.Method.POST)) {
-            return new NanoHTTPD.Response(NanoHTTPD.Response.Status.METHOD_NOT_ALLOWED, "text/plain", "Method not allowed: " + session.getMethod());
+            return HttpUtil.addCors(new NanoHTTPD.Response(NanoHTTPD.Response.Status.METHOD_NOT_ALLOWED, "text/plain", "Method not allowed: " + session.getMethod()));
         }
         try {
             StoredRequest stored = new StoredRequest(session);
@@ -65,10 +78,10 @@ public class RequestStoreAndForward extends Thread {
             saveRequest(stored);
         } catch(IOException e) {
             log.error("Error saving request", e);
-            return new NanoHTTPD.Response(NanoHTTPD.Response.Status.INTERNAL_ERROR, "text/plain", "Error saving request: " + e.getClass() + ": " + e.getMessage());
+            return HttpUtil.addCors(new NanoHTTPD.Response(NanoHTTPD.Response.Status.INTERNAL_ERROR, "text/plain", "Error saving request: " + e.getClass() + ": " + e.getMessage()));
         }
 
-        return new NanoHTTPD.Response(NanoHTTPD.Response.Status.OK, "text/plain; charset=utf-8", "stored");
+        return HttpUtil.addCors(new NanoHTTPD.Response(NanoHTTPD.Response.Status.OK, "text/plain; charset=utf-8", "stored"));
     }
 
     @Override
@@ -82,7 +95,7 @@ public class RequestStoreAndForward extends Thread {
         while(!stop) {
             forwardRequests();
             try {
-                Thread.sleep(15000);
+                Thread.sleep(60 * 1000);
             } catch (InterruptedException ex) {
             }
         }
@@ -108,12 +121,92 @@ public class RequestStoreAndForward extends Thread {
     }
 
     private void forwardRequests() {
-        // Search for files in dir
+        // Search for files in dir to forward
+        for(File f: new File(dir).listFiles()) {
+            if(!f.getName().endsWith(".dat")) {
+                log.trace("Ignoring file in store dir: " + f.getAbsolutePath());
+                continue;
+            }
 
-        // Forward
+            try {
+                forwardRequest(f);
+            } catch(IOException e) {
+                // Stop after first IOException
+
+                // Note: this assumes IOException is due to connection problems
+                // and all following StoredRequests would fail as well. Because
+                // all requests are forwarded to the same forwardURL there is
+                // no point in trying to forward the more stored requests.
+                return;
+            }
+        }
     }
 
-    private void forwardRequest() {
+    private void forwardRequest(File f) throws IOException {
+        StoredRequest request;
+        try(FileInputStream fis = new FileInputStream(f); ObjectInputStream ois = new ObjectInputStream(fis)) {
+            request = (StoredRequest)ois.readObject();
+        } catch(Exception e) {
+            log.error("Error reading stored request from " + f.getAbsolutePath(), e);
+            return;
+        }
 
+        log.info(String.format("Forwarding request from file %s to %s %s%s",
+                f.getName(),
+                request.getMethod(),
+                forwardURL,
+                request.getUriPath()));
+
+        try(CloseableHttpClient httpClient = getHttpClient()) {
+            String uri = forwardURL + request.getUriPath();
+            if(request.getQueryParameters() != null) {
+                uri += "?" + request.getQueryParameters();
+            }
+            RequestBuilder builder = RequestBuilder.create(request.getMethod());
+            builder.setUri(uri);
+            builder.addHeader("X-Original-Date", HttpUtil.formatDate(request.getReceived()));
+            builder.addHeader("X-Original-User-Agent", request.getHeaders().get("user-agent"));
+            String contentType = request.getHeaders().get("content-type");
+            if(contentType != null) {
+                builder.addHeader("Content-Type", contentType);
+            }
+            if(request.getBody() != null && request.getBody().length > 0) {
+                builder.setEntity(new ByteArrayEntity(request.getBody()));
+            }
+            try(CloseableHttpResponse response = httpClient.execute(builder.build())) {
+                if(response.getStatusLine().getStatusCode() == SC_OK) {
+                    log.info("Succesfully forwarded: " + response.getStatusLine());
+                    f.delete();
+                } else {
+                    log.warn("Error forwarding request: " + response.getStatusLine());
+                    if(log.isDebugEnabled()) {
+                        for(Header h: response.getAllHeaders()) {
+                            log.debug("Response header: " + h);
+                        }
+                        try {
+                            HttpEntity entity = response.getEntity();
+                            if(entity != null) {
+                                String content = IOUtils.toString(entity.getContent(), "UTF-8");
+                                log.debug("Response content: " + content);
+                            }
+                        } catch(Exception e) {
+                        }
+                    }
+                }
+            } catch(IOException e) {
+                log.warn("IOException: " + e.getMessage());
+            }
+        }
+    }
+
+    private CloseableHttpClient getHttpClient() {
+        return HttpClients.custom()
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(15 * 1000)
+                        .setSocketTimeout(30 * 1000)
+                        .build()
+                )
+                .setUserAgent(Version.getProperty("project.name") + "/" + Version.getProperty("project.version"))
+                .build();
     }
 }
