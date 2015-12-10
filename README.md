@@ -45,6 +45,9 @@ to `c:\ogg\safetymaps-onboard\bin` and create a shortcut to
 minimized. Start the application and allow network access before deploying the
 system image to fire engines.
 
+To avoid having to modify safetymaps-onboard.cmd, specify the command line in a
+file commandline.txt.
+
 Test the location search by browsing to [http://localhost:1080/q/zonnebaan] on the
 embedded system, and test all functionality described below in the fullscreen 
 safetymaps viewer.
@@ -123,7 +126,7 @@ stored and succesfully forwarded requests.
 
 Only some headers are forwarded:
  - `Content-Type`
- - `Content-Length`
+ - `User-Agent`
  
 Additional headers added:
  - `X-Original-Date` Original Date header
