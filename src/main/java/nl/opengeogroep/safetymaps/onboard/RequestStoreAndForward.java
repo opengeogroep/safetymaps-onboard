@@ -113,7 +113,7 @@ public class RequestStoreAndForward extends Thread {
     }
 
     private void saveRequest(StoredRequest request ) throws IOException {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-dd-MM_HH:mm:ss.SSS");
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-dd-MM_HHmmss.SSS");
         String filename = dir + File.separator + "request_" + df.format(new Date()) + ".dat";
         try(FileOutputStream fos = new FileOutputStream(filename); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(request);
