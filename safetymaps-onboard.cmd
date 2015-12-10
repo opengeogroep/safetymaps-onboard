@@ -2,8 +2,8 @@
 cd %~dp0\..
 :run
 for /f %%i in ('dir bin\*.jar /b') do set JAR=%%i
-set /p CL=<commandline.txt
-java -jar %CL%
+set /p CL=<bin\commandline.txt
+java -jar bin\%JAR% %CL%
 
 if not %errorlevel% == 99 goto exit
 
@@ -15,4 +15,5 @@ echo Running updated version
 goto run
 
 :exit
+
 
