@@ -81,7 +81,7 @@ public class RequestStoreAndForward extends Thread {
             return HttpUtil.addCors(new NanoHTTPD.Response(NanoHTTPD.Response.Status.INTERNAL_ERROR, "text/plain", "Error saving request: " + e.getClass() + ": " + e.getMessage()));
         }
 
-        return HttpUtil.addCors(new NanoHTTPD.Response(NanoHTTPD.Response.Status.OK, "text/plain; charset=utf-8", "stored"));
+        return HttpUtil.addCors(new NanoHTTPD.Response(NanoHTTPD.Response.Status.OK, "application/json; charset=utf-8", "{ \"success\": true, \"message\": \"Bericht bewaard\" }"));
     }
 
     @Override
