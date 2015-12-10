@@ -4,7 +4,7 @@
     <groupId>nl.opengeogroep</groupId>
     <artifactId>safetymaps-onboard</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1-beta</version>
     <name>safetymaps-onboard</name>
     <url>https://github.com/opengeogroep/safetymaps-onboard</url>
     <dependencies>
