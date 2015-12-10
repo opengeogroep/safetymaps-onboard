@@ -88,13 +88,13 @@ public class LocationSearch {
         if(initException != null) {
             StringWriter sw = new StringWriter();
             initException.printStackTrace(new PrintWriter(sw));
-            return new Response(Response.Status.INTERNAL_ERROR, "text/plain", "Fout in locatiezoeker: " + sw.toString());
+            return HttpUtil.addCors(new Response(Response.Status.INTERNAL_ERROR, "text/plain", "Fout in locatiezoeker: " + sw.toString()));
         }
 
         String p = session.getUri().substring(3);
 
         if(p == null || p.trim().length() == 0) {
-            return new Response(Response.Status.OK, "application/json; charset=utf-8", "[]");
+            return HttpUtil.addCors(new Response(Response.Status.OK, "application/json; charset=utf-8", "[]"));
         }
         log.trace("locationsearch: " + p);
 
@@ -135,9 +135,7 @@ public class LocationSearch {
             }
             log.info("locationsearch: " + p + ", hits: " + docs.scoreDocs.length);
 
-            Response r =  new Response(Response.Status.OK, "application/json; charset=utf-8", results.toString(4));
-            r.addHeader("Access-Control-Allow-Origin", "*");
-            return r;
+            return HttpUtil.addCors(new Response(Response.Status.OK, "application/json; charset=utf-8", results.toString(4)));
         } catch(Exception e) {
             log.error("locationsearch: error searching for " + p, e);
             StringWriter sw = new StringWriter();

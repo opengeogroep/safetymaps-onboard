@@ -46,6 +46,6 @@ public class HttpServer extends NanoHTTPD {
             return r;
         }
 
-        return new Response(Status.NOT_FOUND, "text/plain", "Not Found: " + session.getUri());
+        return HttpUtil.addCors(new Response(Status.NOT_FOUND, "text/plain", "Not Found: " + session.getUri()));
     }
 }
