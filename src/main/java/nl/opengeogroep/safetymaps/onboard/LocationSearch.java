@@ -102,11 +102,11 @@ public class LocationSearch {
             String[] words = p.split("\\s+");
             StringBuilder q = new StringBuilder();
             for(String w: words) {
-                q.append(w);
+                q/*.append(w);
                 if(!w.contains("~")) {
                     q.append("~");
                 }
-                q.append(" OR ").append(w).append("*^2 ");
+                q.append(" OR ")*/.append(w).append("*^2 ");
             }
             Analyzer analyzer = new StandardAnalyzer();
             QueryParser parser = new QueryParser("display_name", analyzer);
