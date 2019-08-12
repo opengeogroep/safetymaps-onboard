@@ -7,7 +7,7 @@ cp target/safetymaps-onboard-*.jar bin
 cp -r target/dependency bin
 cp safetymaps-onboard.cmd bin
 
-source ./bag_settings.sh
+source ${1:-./bag_settings.sh}
 echo Querying bag database \(host=$PGHOST,port=$PGPORT,user=$PGUSER,db=$PGDATABASE\)
 echo Organisation area: $AREA
 psql -h $PGHOST -p $PGPORT -U $PGUSER $PGDATABASE -c "select openbareruimtenaam || ' ' \
