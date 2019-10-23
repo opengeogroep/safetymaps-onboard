@@ -14,7 +14,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.DoubleField;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
@@ -44,22 +44,18 @@ public class IndexBuilder {
         iwc.setOpenMode(OpenMode.CREATE);
         IndexWriter writer = new IndexWriter(dir, iwc);
 
-        TextField displayName = new TextField("display_name", "", Field.Store.YES);
-        DoubleField x = new DoubleField("lon", 0.0, Field.Store.YES);
-        DoubleField y = new DoubleField("lat", 0.0, Field.Store.YES);
-        Document doc = new Document();
-        doc.add(displayName);
-        doc.add(x);
-        doc.add(y);
-
         String s;
         int i = 0;
         while((s = r.readLine()) != null) {
             String[] vals = s.split("\0");
+            String displayName = vals[0];
+            double x = Double.parseDouble(vals[1]);
+            double y = Double.parseDouble(vals[2]);
 
-            displayName.setStringValue(vals[0]);
-            x.setDoubleValue(Double.parseDouble(vals[1]));
-            y.setDoubleValue(Double.parseDouble(vals[2]));
+            Document doc = new Document();
+            doc.add(new TextField("display_name", displayName, Field.Store.YES));
+            doc.add(new StoredField("lon", x));
+            doc.add(new StoredField("lat", y));
 
             writer.addDocument(doc);
             i++;
