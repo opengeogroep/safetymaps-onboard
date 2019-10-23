@@ -3,6 +3,7 @@ git.properties
 bag.txt
 organisation_area.wkt
 bag_settings.sh
+bag_settings_*
 bin
 target
 var
