@@ -1,4 +1,6 @@
 @echo off
+rem Let op! Bewerken van dit bestand kan lopende clients breken, omdat na updaten
+rem Windows bij een lopend script verder gaat op dezelfde byte-positie van het script!
 cd %~dp0\..
 :run
 for /f %%i in ('dir bin\*.jar /b') do set JAR=%%i
@@ -10,7 +12,7 @@ if not %errorlevel% == 99 goto exit
 echo Updating safetymaps-onboard
 rmdir /q /s bak 2>nul
 xcopy /e /q /i bin bak
-xcopy /e /q /y update bin
+robocopy /mir  update bin
 echo Running updated version
 goto run
 
